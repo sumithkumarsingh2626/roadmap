@@ -332,10 +332,30 @@ function getMonthStats(monthIndex, completedTopics) {
   return { total, completed };
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 640;
+  });
+
+  useEffect(() => {
+    function onResize() {
+      setIsMobile(window.innerWidth <= 640);
+    }
+
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return isMobile;
+}
+
 export default function PlacementRoadmap() {
   const [activeMonth, setActiveMonth] = useState(0);
   const [activeTrack, setActiveTrack] = useState(0);
   const [completedTopics, setCompletedTopics] = useState({});
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -372,11 +392,17 @@ export default function PlacementRoadmap() {
     }));
   }
 
+  function goToMonth(direction) {
+    setActiveMonth((prev) => Math.min(Math.max(prev + direction, 0), roadmap.length - 1));
+    setActiveTrack(0);
+  }
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "#0A0A0F",
+        background:
+          "radial-gradient(circle at top, rgba(78,205,196,0.12), transparent 32%), linear-gradient(180deg, #0A0A0F 0%, #101018 100%)",
         fontFamily: "'Courier New', monospace",
         color: "#E8E8E8",
         padding: "0",
@@ -387,7 +413,7 @@ export default function PlacementRoadmap() {
         style={{
           background: "linear-gradient(135deg, #0A0A0F 0%, #12121A 50%, #0A0A0F 100%)",
           borderBottom: "1px solid #1E1E2E",
-          padding: "32px 24px 24px",
+          padding: isMobile ? "20px 16px 18px" : "32px 24px 24px",
           textAlign: "center",
           position: "relative",
         }}
@@ -404,9 +430,9 @@ export default function PlacementRoadmap() {
         />
         <div
           style={{
-            fontSize: "12px",
+            fontSize: isMobile ? "10px" : "12px",
             color: "#666",
-            letterSpacing: "4px",
+            letterSpacing: isMobile ? "2px" : "4px",
             marginBottom: "8px",
             textTransform: "uppercase",
           }}
@@ -415,7 +441,8 @@ export default function PlacementRoadmap() {
         </div>
         <h1
           style={{
-            fontSize: "clamp(24px, 5vw, 42px)",
+            fontSize: isMobile ? "28px" : "clamp(24px, 5vw, 42px)",
+            lineHeight: 1.1,
             fontWeight: "900",
             margin: "0 0 8px",
             background: "linear-gradient(90deg, #FF6B35, #4ECDC4, #C9B1FF)",
@@ -427,20 +454,41 @@ export default function PlacementRoadmap() {
         >
           6-MONTH PLACEMENT ROADMAP
         </h1>
-        <p style={{ color: "#666", fontSize: "13px", margin: 0 }}>
+        <p style={{ color: "#8B8B97", fontSize: isMobile ? "12px" : "13px", margin: 0 }}>
           DSA · Dev Skills · AI/Cloud · Resume · Interviews
         </p>
+        <div
+          style={{
+            marginTop: "14px",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "999px",
+            padding: "8px 12px",
+            fontSize: isMobile ? "11px" : "12px",
+            color: "#B8B8C7",
+          }}
+        >
+          <span>{"\u{1F4F1}"}</span>
+          Add to home screen to use this like a mobile app
+        </div>
       </div>
 
       <div
         style={{
           display: "flex",
           gap: "8px",
-          padding: "20px 16px",
+          padding: isMobile ? "14px 12px" : "20px 16px",
           overflowX: "auto",
           scrollbarWidth: "none",
-          background: "#0D0D14",
+          background: "rgba(13,13,20,0.92)",
           borderBottom: "1px solid #1A1A26",
+          position: "sticky",
+          top: 0,
+          zIndex: 5,
+          backdropFilter: "blur(10px)",
         }}
       >
         {roadmap.map((month, monthIndex) => {
@@ -454,51 +502,67 @@ export default function PlacementRoadmap() {
               }}
               style={{
                 flex: "0 0 auto",
-                padding: "10px 16px",
-                borderRadius: "8px",
+                minWidth: isMobile ? "132px" : "unset",
+                padding: isMobile ? "10px 12px" : "10px 16px",
+                borderRadius: "12px",
                 border: `1.5px solid ${activeMonth === monthIndex ? month.color : "#1E1E2E"}`,
                 background: activeMonth === monthIndex ? `${month.color}18` : "transparent",
-                color: activeMonth === monthIndex ? month.color : "#555",
+                color: activeMonth === monthIndex ? month.color : "#666",
                 cursor: "pointer",
-                fontSize: "12px",
+                fontSize: isMobile ? "11px" : "12px",
                 fontFamily: "inherit",
                 fontWeight: "700",
-                letterSpacing: "1px",
+                letterSpacing: "0.6px",
                 transition: "all 0.2s",
                 whiteSpace: "nowrap",
               }}
             >
-              {month.icon} {month.month.toUpperCase()} [{stats.completed}/{stats.total}]
+              {month.icon} {month.month.toUpperCase()}
+              <div style={{ fontSize: "10px", marginTop: "4px", opacity: 0.9 }}>
+                {stats.completed}/{stats.total} done
+              </div>
             </button>
           );
         })}
       </div>
 
-      <div style={{ padding: "20px 16px", maxWidth: "760px", margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "14px 12px 28px" : "20px 16px 32px", maxWidth: "760px", margin: "0 auto" }}>
         <div
           style={{
             background: `linear-gradient(135deg, ${current.color}15 0%, ${current.color}08 100%)`,
             border: `1px solid ${current.color}30`,
             borderLeft: `4px solid ${current.color}`,
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "20px",
+            borderRadius: "18px",
+            padding: isMobile ? "16px" : "20px",
+            marginBottom: "16px",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.16)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "28px" }}>{current.icon}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "11px", color: current.color, letterSpacing: "3px", fontWeight: "700" }}>
-                {current.month.toUpperCase()}
-              </div>
-              <div style={{ fontSize: "18px", fontWeight: "900", color: "#F0F0F0", letterSpacing: "-0.5px" }}>
-                {current.theme}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center",
+              gap: "12px",
+              marginBottom: "8px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
+              <span style={{ fontSize: isMobile ? "24px" : "28px" }}>{current.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "11px", color: current.color, letterSpacing: "3px", fontWeight: "700" }}>
+                  {current.month.toUpperCase()}
+                </div>
+                <div style={{ fontSize: isMobile ? "16px" : "18px", fontWeight: "900", color: "#F0F0F0", letterSpacing: "-0.5px" }}>
+                  {current.theme}
+                </div>
               </div>
             </div>
             <div
               style={{
-                minWidth: "88px",
-                textAlign: "right",
+                alignSelf: isMobile ? "stretch" : "auto",
+                minWidth: isMobile ? "unset" : "88px",
+                textAlign: isMobile ? "left" : "right",
                 fontSize: "11px",
                 color: current.color,
                 fontWeight: "700",
@@ -533,6 +597,43 @@ export default function PlacementRoadmap() {
             </div>
             <div style={{ fontSize: "11px", color: "#DDD", minWidth: "44px", textAlign: "right" }}>{monthProgress}%</div>
           </div>
+          {isMobile ? (
+            <div style={{ display: "flex", gap: "10px", marginTop: "14px" }}>
+              <button
+                onClick={() => goToMonth(-1)}
+                disabled={activeMonth === 0}
+                style={{
+                  flex: 1,
+                  padding: "11px 12px",
+                  borderRadius: "12px",
+                  border: "1px solid #242436",
+                  background: activeMonth === 0 ? "#111118" : "#141420",
+                  color: activeMonth === 0 ? "#4D4D5D" : "#E8E8E8",
+                  fontFamily: "inherit",
+                  cursor: activeMonth === 0 ? "default" : "pointer",
+                }}
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => goToMonth(1)}
+                disabled={activeMonth === roadmap.length - 1}
+                style={{
+                  flex: 1,
+                  padding: "11px 12px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: activeMonth === roadmap.length - 1 ? "#25252B" : current.color,
+                  color: "#0A0A0F",
+                  fontWeight: "700",
+                  fontFamily: "inherit",
+                  cursor: activeMonth === roadmap.length - 1 ? "default" : "pointer",
+                }}
+              >
+                Next Month
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
@@ -546,19 +647,24 @@ export default function PlacementRoadmap() {
                 key={track.name}
                 onClick={() => setActiveTrack(trackIndex)}
                 style={{
-                  padding: "8px 14px",
-                  borderRadius: "20px",
+                  flex: isMobile ? "1 1 calc(50% - 4px)" : "0 0 auto",
+                  minWidth: isMobile ? "0" : "unset",
+                  padding: isMobile ? "10px 12px" : "8px 14px",
+                  borderRadius: "14px",
                   border: `1.5px solid ${activeTrack === trackIndex ? current.color : "#222"}`,
                   background: activeTrack === trackIndex ? `${current.color}22` : "#111",
-                  color: activeTrack === trackIndex ? current.color : "#555",
+                  color: activeTrack === trackIndex ? current.color : "#666",
                   cursor: "pointer",
-                  fontSize: "12px",
+                  fontSize: isMobile ? "11px" : "12px",
                   fontFamily: "inherit",
                   fontWeight: "700",
                   transition: "all 0.2s",
                 }}
               >
-                {track.name} [{done}/{track.items.length}]
+                {track.name}
+                <div style={{ fontSize: "10px", marginTop: "4px" }}>
+                  {done}/{track.items.length}
+                </div>
               </button>
             );
           })}
@@ -568,17 +674,18 @@ export default function PlacementRoadmap() {
           style={{
             background: "#0E0E18",
             border: "1px solid #1A1A2A",
-            borderRadius: "12px",
-            padding: "20px",
+            borderRadius: "18px",
+            padding: isMobile ? "16px" : "20px",
             marginBottom: "16px",
           }}
         >
           <div
             style={{
               display: "flex",
+              flexDirection: isMobile ? "column" : "row",
               justifyContent: "space-between",
-              alignItems: "center",
-              gap: "12px",
+              alignItems: isMobile ? "flex-start" : "center",
+              gap: "8px",
               marginBottom: "14px",
             }}
           >
@@ -599,8 +706,8 @@ export default function PlacementRoadmap() {
                 style={{
                   display: "flex",
                   alignItems: "flex-start",
-                  gap: "12px",
-                  padding: "12px 0",
+                  gap: isMobile ? "10px" : "12px",
+                  padding: isMobile ? "14px 0" : "12px 0",
                   borderBottom: itemIndex < currentTrackItems.length - 1 ? "1px solid #1A1A2A" : "none",
                   cursor: "pointer",
                 }}
@@ -611,8 +718,8 @@ export default function PlacementRoadmap() {
                   onChange={() => toggleTopic(activeMonth, activeTrack, itemIndex)}
                   style={{
                     marginTop: "2px",
-                    width: "16px",
-                    height: "16px",
+                    width: isMobile ? "18px" : "16px",
+                    height: isMobile ? "18px" : "16px",
                     accentColor: current.color,
                     cursor: "pointer",
                     flexShrink: 0,
@@ -620,7 +727,7 @@ export default function PlacementRoadmap() {
                 />
                 <span
                   style={{
-                    fontSize: "13px",
+                    fontSize: isMobile ? "14px" : "13px",
                     color: isCompleted ? current.accent : "#CCC",
                     lineHeight: "1.5",
                     textDecoration: isCompleted ? "line-through" : "none",
@@ -638,12 +745,12 @@ export default function PlacementRoadmap() {
           style={{
             background: `${current.color}12`,
             border: `1px dashed ${current.color}50`,
-            borderRadius: "10px",
-            padding: "14px 18px",
+            borderRadius: "16px",
+            padding: isMobile ? "14px 16px" : "14px 18px",
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            marginBottom: "24px",
+            marginBottom: "20px",
           }}
         >
           <span style={{ fontSize: "18px" }}>{"\u{1F3AF}"}</span>
@@ -651,11 +758,11 @@ export default function PlacementRoadmap() {
             <div style={{ fontSize: "10px", color: current.color, letterSpacing: "2px", marginBottom: "2px" }}>
               MONTH TARGET
             </div>
-            <div style={{ fontSize: "13px", fontWeight: "700", color: "#DDD" }}>{current.target}</div>
+            <div style={{ fontSize: isMobile ? "12px" : "13px", fontWeight: "700", color: "#DDD" }}>{current.target}</div>
           </div>
         </div>
 
-        <div style={{ marginBottom: "24px" }}>
+        <div style={{ marginBottom: "20px" }}>
           <div style={{ fontSize: "11px", color: "#444", letterSpacing: "3px", marginBottom: "14px" }}>
             FULL TIMELINE OVERVIEW
           </div>
@@ -673,7 +780,7 @@ export default function PlacementRoadmap() {
                     display: "flex",
                     alignItems: "center",
                     gap: "12px",
-                    padding: "12px 14px",
+                    padding: isMobile ? "14px 12px" : "12px 14px",
                     cursor: "pointer",
                     background: activeMonth === monthIndex ? `${month.color}12` : "transparent",
                     borderLeft: `3px solid ${activeMonth === monthIndex ? month.color : "#1A1A2A"}`,
@@ -682,7 +789,7 @@ export default function PlacementRoadmap() {
                   }}
                 >
                   <span style={{ fontSize: "16px" }}>{month.icon}</span>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "11px", color: activeMonth === monthIndex ? month.color : "#444", fontWeight: "700" }}>
                       {month.month}
                     </div>
@@ -695,9 +802,10 @@ export default function PlacementRoadmap() {
                       fontSize: "10px",
                       background: `${month.color}20`,
                       color: month.color,
-                      padding: "3px 8px",
-                      borderRadius: "10px",
+                      padding: "4px 8px",
+                      borderRadius: "999px",
                       letterSpacing: "0.5px",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {stats.completed}/{stats.total}
@@ -708,11 +816,11 @@ export default function PlacementRoadmap() {
           </div>
         </div>
 
-        <div style={{ marginBottom: "24px" }}>
+        <div style={{ marginBottom: "20px" }}>
           <div style={{ fontSize: "11px", color: "#444", letterSpacing: "3px", marginBottom: "14px" }}>
             TOP FREE RESOURCES
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
             {resources.map((resource) => (
               <a
                 key={resource.name}
@@ -722,8 +830,8 @@ export default function PlacementRoadmap() {
                 style={{
                   background: "#0E0E18",
                   border: "1px solid #1A1A2A",
-                  borderRadius: "8px",
-                  padding: "12px",
+                  borderRadius: "16px",
+                  padding: isMobile ? "14px" : "12px",
                   textDecoration: "none",
                   transition: "transform 0.2s ease, border-color 0.2s ease",
                   display: "block",
@@ -731,7 +839,7 @@ export default function PlacementRoadmap() {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
-                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>{resource.emoji}</div>
+                  <div style={{ fontSize: isMobile ? "20px" : "18px", marginBottom: "6px" }}>{resource.emoji}</div>
                   <div
                     style={{
                       fontSize: "10px",
@@ -743,7 +851,9 @@ export default function PlacementRoadmap() {
                     Open link
                   </div>
                 </div>
-                <div style={{ fontSize: "12px", color: "#DDD", fontWeight: "700", marginBottom: "4px" }}>{resource.name}</div>
+                <div style={{ fontSize: isMobile ? "13px" : "12px", color: "#DDD", fontWeight: "700", marginBottom: "4px" }}>
+                  {resource.name}
+                </div>
                 <div style={{ fontSize: "10px", color: "#777", marginBottom: "6px", letterSpacing: "1px" }}>
                   {resource.type.toUpperCase()}
                 </div>
@@ -757,9 +867,9 @@ export default function PlacementRoadmap() {
           style={{
             background: "linear-gradient(135deg, #0E0E18, #12121F)",
             border: "1px solid #1E1E30",
-            borderRadius: "12px",
-            padding: "20px",
-            marginBottom: "24px",
+            borderRadius: "18px",
+            padding: isMobile ? "16px" : "20px",
+            marginBottom: "20px",
           }}
         >
           <div style={{ fontSize: "11px", color: "#444", letterSpacing: "3px", marginBottom: "14px" }}>
@@ -773,7 +883,7 @@ export default function PlacementRoadmap() {
                 borderBottom: index < proTips.length - 1 ? "1px solid #141420" : "none",
               }}
             >
-              <div style={{ fontSize: "13px", color: "#F0F0F0", fontWeight: "700", marginBottom: "3px" }}>
+              <div style={{ fontSize: isMobile ? "14px" : "13px", color: "#F0F0F0", fontWeight: "700", marginBottom: "3px" }}>
                 {">"} {tip.tip}
               </div>
               <div style={{ fontSize: "12px", color: "#555" }}>{tip.detail}</div>
@@ -784,10 +894,10 @@ export default function PlacementRoadmap() {
         <div
           style={{
             textAlign: "center",
-            padding: "16px",
+            padding: "16px 12px",
             borderTop: "1px solid #111",
             fontSize: "11px",
-            color: "#333",
+            color: "#444",
             letterSpacing: "1px",
           }}
         >
